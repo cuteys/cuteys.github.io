@@ -1,0 +1,42 @@
+name: Sync to GitLab  # 强制推送
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Git
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "actions@github.com"
+
+    - name: Add GitLab remote
+      run: |
+        git remote remove gitlab || true
+        git remote add gitlab https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/cuteys/cuteys.gitlab.io.git
+
+    - name: Fetch all branches from GitLab
+      run: git fetch --all
+
+    - name: Force push all branches to GitLab
+      run: |
+        for remote_branch in $(git branch -r | grep -v '\->' | sed 's/origin\///'); do
+          if git show-ref --quiet refs/heads/$remote_branch; then
+            git push --force gitlab $remote_branch:$remote_branch
+          else
+            echo "Branch $remote_branch does not exist locally, skipping."
+          fi
+        done
+    
+    - name: Force push all tags to GitLab
+      run: git push --force gitlab --tags
