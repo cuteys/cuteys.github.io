@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资本做局器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+            background-image:
+                    radial-gradient(circle at 10% 20%, rgba(57, 73, 171, 0.1) 0%, rgba(57, 73, 171, 0) 60%),
+                    radial-gradient(circle at 90% 80%, rgba(216, 27, 96, 0.1) 0%, rgba(216, 27, 96, 0) 60%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" opacity="0.08"><text x="40" y="80" font-size="50" fill="%23333">$</text><text x="140" y="180" font-size="60" fill="%233949ab">¥</text><text x="240" y="80" font-size="55" fill="%23d81b60">€</text><text x="340" y="180" font-size="50" fill="%23333">£</text><text x="440" y="80" font-size="60" fill="%233949ab">₿</text><text x="40" y="280" font-size="55" fill="%23d81b60">$</text><text x="140" y="380" font-size="50" fill="%23333">¥</text><text x="240" y="280" font-size="60" fill="%233949ab">€</text><text x="340" y="380" font-size="55" fill="%23d81b60">£</text><text x="440" y="280" font-size="50" fill="%23333">₿</text></svg>');
+            opacity: 0.7;
+            z-index: -1;
+            animation: floatBackground 120s linear infinite;
+        }
+
+        @keyframes floatBackground {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 500px 500px;
+            }
+        }
+
+        .money-element {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0;
+            z-index: -1;
+            animation: float 15s linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(60vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.4;
+            }
+            90% {
+                opacity: 0.4;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            width: 90%;
+            max-width: 400px;
+            background-color: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            font-weight: 600;
+            background: linear-gradient(45deg, #3949ab, #9c27b0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3949ab;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            width: 48%;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #3949ab, #5c6bc0);
+            color: white;
+            box-shadow: 0 4px 15px rgba(57, 73, 171, 0.3);
+        }
+
+        .start-btn:hover {
+            background: linear-gradient(45deg, #303f9f, #3949ab);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(57, 73, 171, 0.4);
+        }
+
+        .exit-btn {
+            background: linear-gradient(45deg, #f44336, #e57373);
+            color: white;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .exit-btn:hover {
+            background: linear-gradient(45deg, #e53935, #ef5350);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+        }
+
+        .progress-container {
+            display: none;
+            background-color: rgba(238, 238, 238, 0.7);
+            border-radius: 20px;
+            height: 15px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #3949ab, #9c27b0);
+            height: 100%;
+            border-radius: 20px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .dot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #3949ab;
+            border-radius: 50%;
+            top: -2.5px;
+            left: 0;
+            transform: translateX(-50%);
+            transition: left 0.1s linear;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 90%;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+            animation: zoomIn 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-title {
+            font-size: 24px;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #d32f2f, #f44336);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+
+        .modal-text {
+            font-size: 16px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .close-btn {
+            padding: 12px 30px;
+            background: linear-gradient(45deg, #3949ab, #5c6bc0);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(57, 73, 171, 0.3);
+            flex: 1;
+        }
+
+        .close-btn:hover {
+            background: linear-gradient(45deg, #303f9f, #3949ab);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(57, 73, 171, 0.4);
+        }
+
+        .exit-confirm-btn {
+            background: linear-gradient(45deg, #f44336, #e57373);
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .exit-confirm-btn:hover {
+            background: linear-gradient(45deg, #e53935, #ef5350);
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>资本做局器</h1>
+    <div class="btn-container">
+        <button class="btn start-btn">开始做局</button>
+        <button class="btn exit-btn">退出</button>
+    </div>
+    <div class="progress-container">
+        <div class="progress-bar"></div>
+        <div class="dot"></div>
+    </div>
+</div>
+
+<div class="modal" id="resultModal">
+    <div class="modal-content">
+        <h2 class="modal-title">资本做局完成！</h2>
+        <p class="modal-text">您已被资本做局了10秒！资本的力量无处不在，您已成为了这场资本游戏的一部分。</p>
+        <button class="close-btn">我明白了</button>
+    </div>
+</div>
+
+<div class="modal" id="exitModal">
+    <div class="modal-content">
+        <h2 class="modal-title">退出确认</h2>
+        <p class="modal-text" id="exitModalText"></p>
+        <div style="display: flex; justify-content: space-between; gap: 10px;">
+            <button class="close-btn exit-confirm-btn" id="confirmExitBtn">确认退出</button>
+            <button class="close-btn" id="cancelExitBtn">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const startBtn = document.querySelector('.start-btn');
+    const exitBtn = document.querySelector('.exit-btn');
+    const progressContainer = document.querySelector('.progress-container');
+    const progressBar = document.querySelector('.progress-bar');
+    const dot = document.querySelector('.dot');
+    const modal = document.getElementById('resultModal');
+    const closeBtn = document.querySelector('.close-btn');
+    const modalText = document.querySelector('.modal-text');
+    
+    const exitModal = document.getElementById('exitModal');
+    const exitModalText = document.getElementById('exitModalText');
+    const confirmExitBtn = document.getElementById('confirmExitBtn');
+    const cancelExitBtn = document.getElementById('cancelExitBtn');
+
+    const endingPhrases = [
+        "资本的力量无处不在，您已成为了这场资本游戏的一部分。",
+        "恭喜您，已被资本收割！您的时间已成为资本增值的养料。",
+        "资本市场从不眠，您刚刚贡献了宝贵的时间给这个永不停歇的机器。",
+        "您已被资本化，成为了市场经济的又一个数据点。",
+        "资本的游戏永无止境，感谢您的参与和贡献！",
+        "您的时间已被资本市场量化并消费，感谢您的付出。",
+        "资本的逻辑已将您纳入其运行轨道，您已成功融入这个体系。",
+        "恭喜！您已成为资本循环中的重要一环，继续前行吧！"
+    ];
+
+    function createMoneyElements() {
+        const symbols = ['$', '¥', '€', '£', '₿', '💰', '💵', '💸'];
+        const colors = ['#3949ab', '#d32f2f', '#388e3c', '#f57c00', '#5d4037', '#7b1fa2'];
+
+        for(let i = 0; i < 15; i++) {
+            const el = document.createElement('div');
+            el.className = 'money-element';
+            el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+            el.style.color = colors[Math.floor(Math.random() * colors.length)];
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.animationDuration = (10 + Math.random() * 20) + 's';
+            el.style.animationDelay = Math.random() * 3 + 's';
+            document.body.appendChild(el);
+        }
+    }
+
+    createMoneyElements();
+
+    let interval;
+    let progress = 0;
+    let totalSeconds = 0;
+
+    startBtn.addEventListener('click', () => {
+        if (interval) return;
+
+        totalSeconds = Math.floor(Math.random() * 11) + 5;
+        const totalMs = totalSeconds * 1000;
+        const stepMs = totalMs / 100;
+
+        progressContainer.style.display = 'block';
+
+        startBtn.disabled = true;
+        progress = 0;
+        progressBar.style.width = '0%';
+        dot.style.left = '0%';
+
+        interval = setInterval(() => {
+            progress += 1;
+            progressBar.style.width = progress + '%';
+            dot.style.left = progress + '%';
+
+            if (progress >= 100) {
+                clearInterval(interval);
+                interval = null;
+                showModal();
+                startBtn.disabled = false;
+            }
+        }, stepMs);
+    });
+
+    exitBtn.addEventListener('click', () => {
+        const exitQuestions = [
+            "资本的游戏才刚刚开始，您确定要退出吗？",
+            "逃离资本的掌控是不可能的，您确定要尝试吗？",
+            "您真的以为可以逃脱资本的魔爪吗？确定退出？",
+            "每一次退出都是对资本的妥协，您确定要这样做吗？",
+            "资本已经看透了您的行为，确定要退出这个幻象吗？",
+            "您的退出也在资本的计算之中，确定继续吗？",
+            "没有人能真正退出资本的游戏，您确定要尝试吗？",
+            "这只是资本游戏的一部分，您确定要配合它吗？"
+        ];
+        
+        const randomQuestion = exitQuestions[Math.floor(Math.random() * exitQuestions.length)];
+        
+        exitModalText.textContent = randomQuestion;
+        exitModal.style.display = 'flex';
+    });
+    
+    confirmExitBtn.addEventListener('click', () => {
+        window.close();
+        document.body.innerHTML = '<div style="text-align: center; padding: 50px; font-size: 20px;">您已退出资本做局器。<br><br><a href="' + window.location.href + '" style="color: #3949ab;">重新开始</a></div>';
+    });
+    
+    cancelExitBtn.addEventListener('click', () => {
+        exitModal.style.display = 'none';
+    });
+
+    function showModal() {
+        const randomEnding = endingPhrases[Math.floor(Math.random() * endingPhrases.length)];
+        modalText.textContent = `您已被资本做局了${totalSeconds}秒！${randomEnding}`;
+        modal.style.display = 'flex';
+    }
+
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        progressContainer.style.display = 'none';
+        progress = 0;
+        progressBar.style.width = '0%';
+        dot.style.left = '0%';
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+            progressContainer.style.display = 'none';
+        }
+    });
+    
+    exitModal.addEventListener('click', (e) => {
+        if (e.target === exitModal) {
+            exitModal.style.display = 'none';
+        }
+    });
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e8cf23ed885dd6","version":"2025.7.0","r":1,"token":"bc6676b54b2341c3948cd9480ed89d44","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
+</body>
+</html>
